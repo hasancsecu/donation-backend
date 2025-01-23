@@ -19,7 +19,7 @@ export class CreateDonationDto {
   amount: number;
 
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 
   @IsOptional()

@@ -19,10 +19,13 @@ export class Donation {
   amount: number;
 
   @Column({ nullable: true })
-  email: string;
+  email?: string;
 
   @Column({ nullable: true })
   message?: string;
+
+  @Column({ nullable: true })
+  adminRemarks?: string;
 
   @CreateDateColumn()
   createdAt: Date;
