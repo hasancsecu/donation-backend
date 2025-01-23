@@ -1,4 +1,3 @@
-// src/donations/donations.controller.ts
 import {
   Controller,
   Get,
