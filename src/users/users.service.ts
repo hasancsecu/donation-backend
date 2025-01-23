@@ -11,17 +11,23 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { username } });
-  }
-
-  async create(username: string, password: string, role: 'admin' | 'user') {
+  async create(
+    name: string,
+    email: string,
+    password: string,
+    role: 'admin' | 'user',
+  ) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = this.userRepository.create({
-      username,
+      name,
+      email,
       password: hashedPassword,
       role,
     });
     return this.userRepository.save(user);
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email: email } });
   }
 }

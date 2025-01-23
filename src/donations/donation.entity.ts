@@ -14,12 +14,12 @@ export class Donation {
   id: number;
 
   @Column()
-  donorName: string;
+  name: string;
 
   @Column({ type: 'decimal' })
   amount: number;
 
-  @Column()
+  @Column({ nullable: true })
   email: string;
 
   @Column({ nullable: true })

@@ -12,14 +12,15 @@ export class CreateDonationDto {
   @MaxLength(100, {
     message: 'Donor name must be less than or equal to 100 characters',
   })
-  donorName: string;
+  name: string;
 
   @IsNumber()
   @Min(1, { message: 'Donation amount must be at least 1' })
   amount: number;
 
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
