@@ -13,8 +13,8 @@ import {
 import { DonationsService } from './donations.service';
 import { CreateDonationDto } from './dtos/create-donation.dto';
 import { UpdateDonationDto } from './dtos/update-donation.dto';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { Roles } from 'src/auth/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 @UseGuards(RolesGuard)
 @Controller('donations')
 export class DonationsController {
