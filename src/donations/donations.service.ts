@@ -33,23 +33,29 @@ export class DonationsService {
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-    const todayDonation = await this.donationRepository
-      .createQueryBuilder('donations')
-      .select('SUM(donations.amount)', 'sum')
-      .where('donations.createdAt BETWEEN :startOfDay AND :endOfDay', {
-        startOfDay,
-        endOfDay,
-      })
-      .getRawOne();
+    const todayDonation = await this.donationRepository.find({
+      select: ['amount'],
+      where: {
+        createdAt: Between(startOfDay, endOfDay),
+      },
+    });
 
-    const totalDonation = await this.donationRepository
-      .createQueryBuilder('donations')
-      .select('SUM(donations.amount)', 'sum')
-      .getRawOne();
+    const totalTodayDonation = todayDonation.reduce(
+      (sum, donation) => sum + Number(donation.amount),
+      0,
+    );
+
+    const totalDonation = await this.donationRepository.find({
+      select: ['amount'],
+    });
+    const totalDonationSum = totalDonation.reduce(
+      (sum, donation) => sum + Number(donation.amount),
+      0,
+    );
 
     return {
-      totalDonation: totalDonation.sum || 0,
-      todayDonation: todayDonation.sum || 0,
+      totalDonation: totalDonationSum,
+      todayDonation: totalTodayDonation,
     };
   }
 
@@ -75,45 +81,55 @@ export class DonationsService {
     const skip = (page - 1) * limit;
     const orderBy = { [sort]: order };
 
-    const where: any = {
-      ...(q && {
-        name: ILike(`%${q}%`),
-        email: ILike(`%${q}%`),
-      }),
-      ...(from && {
-        createdAt: MoreThanOrEqual(new Date(from + 'T00:00:00Z')),
-      }),
-      ...(to && {
-        createdAt: LessThanOrEqual(new Date(to + 'T23:59:59Z')),
-      }),
-    };
+    let where: any = [];
 
+    if (q) {
+      where.push({ name: ILike(`%${q}%`) }, { email: ILike(`%${q}%`) });
+    }
+
+    const dateCondition: any = {};
     if (from && to) {
-      where.createdAt = Between(
+      dateCondition.createdAt = Between(
         new Date(from + 'T00:00:00Z'),
         new Date(to + 'T23:59:59Z'),
       );
+    } else if (from) {
+      dateCondition.createdAt = MoreThanOrEqual(new Date(from + 'T00:00:00Z'));
+    } else if (to) {
+      dateCondition.createdAt = LessThanOrEqual(new Date(to + 'T23:59:59Z'));
     }
 
-    const [data, total] = await this.donationRepository.findAndCount({
+    if (Object.keys(dateCondition).length > 0) {
+      if (where.length > 0) {
+        where = where.map((condition) => ({ ...condition, ...dateCondition }));
+      } else {
+        where.push(dateCondition);
+      }
+    }
+
+    const [data, totalRecords] = await this.donationRepository.findAndCount({
       skip,
       take: limit,
-      where,
+      where: where.length ? where : undefined,
       order: orderBy,
     });
 
-    const totalDonation = await this.donationRepository
-      .createQueryBuilder('donations')
-      .select('SUM(donations.amount)', 'total')
-      .where(where)
-      .getRawOne();
+    const donations = await this.donationRepository.find({
+      where: where.length ? where : undefined,
+      select: ['amount'],
+    });
+
+    const totalDonation = donations.reduce(
+      (sum, donation) => sum + Number(donation.amount),
+      0,
+    );
 
     return {
       data,
-      total,
-      totalDonation: totalDonation.total || 0,
+      totalRecords,
+      totalDonation,
       currentPage: page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(totalRecords / limit),
     };
   }
 
@@ -131,40 +147,42 @@ export class DonationsService {
 
     const where: any = {
       email: user.email,
-      ...(from && {
-        createdAt: MoreThanOrEqual(new Date(from + 'T00:00:00Z')),
-      }),
-      ...(to && {
-        createdAt: LessThanOrEqual(new Date(to + 'T23:59:59Z')),
-      }),
     };
 
     if (from && to) {
       where.createdAt = Between(
-        new Date(from + 'T00:00:00Z'),
-        new Date(to + 'T23:59:59Z'),
+        new Date(`${from}T00:00:00Z`),
+        new Date(`${to}T23:59:59Z`),
       );
+    } else if (from) {
+      where.createdAt = MoreThanOrEqual(new Date(`${from}T00:00:00Z`));
+    } else if (to) {
+      where.createdAt = LessThanOrEqual(new Date(`${to}T23:59:59Z`));
     }
 
-    const [data, total] = await this.donationRepository.findAndCount({
+    const [data, totalRecords] = await this.donationRepository.findAndCount({
       where,
       skip,
       take: limit,
       order: orderBy,
     });
 
-    const totalDonation = await this.donationRepository
-      .createQueryBuilder('donations')
-      .select('SUM(donations.amount)', 'total')
-      .where(where)
-      .getRawOne();
+    const donations = await this.donationRepository.find({
+      where,
+      select: ['amount'],
+    });
+
+    const totalDonation = donations.reduce(
+      (sum, donation) => sum + Number(donation.amount),
+      0,
+    );
 
     return {
       data,
-      total,
-      totalDonation: totalDonation.total || 0,
+      totalRecords,
+      totalDonation,
       currentPage: page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(totalRecords / limit),
     };
   }
 
