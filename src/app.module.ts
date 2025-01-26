@@ -32,6 +32,9 @@ const ENV = process.env.NODE_ENV;
         password: configService.get('databaseConfig.password'),
         host: configService.get('databaseConfig.host'),
         database: configService.get('databaseConfig.name'),
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
   ],
